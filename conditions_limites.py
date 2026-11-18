@@ -1,3 +1,6 @@
+from solveur import PRM_DEFAUT
+
+
 def appliquer_cl(A_lil, b, k, cl, prm) :
     
 

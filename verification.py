@@ -1,3 +1,7 @@
+from solveur import PRM_DEFAUT
+
+
+
 def generer_solution_manufacturee() :
     
 
