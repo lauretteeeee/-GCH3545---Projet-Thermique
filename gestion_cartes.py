@@ -1,4 +1,4 @@
-def lire_cartes()
+def lire_cartes(chemin)
     
 
 
@@ -7,7 +7,7 @@ def lire_cartes()
     return 
 
 
-def ecrire_cartes()
+def ecrire_cartes(hemin, chi)
     
 
 
@@ -16,7 +16,7 @@ def ecrire_cartes()
     return
 
 
-def evaluer_cartes()
+def evaluer_cartes(chi)
     
 
 
