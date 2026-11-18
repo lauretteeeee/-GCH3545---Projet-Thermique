@@ -1,18 +1,18 @@
-def chi_vers_proprietes(chi, prm)
+def chi_vers_proprietes(chi, prm) :
     
 
 
 
     return
 
-def assembler_systeme(chi, cl, prm, terme_source=None)
+def assembler_systeme(chi, cl, prm, terme_source=None) :
     
 
 
     return
 
 
-def resoudre(A, b)
+def resoudre(A, b) : 
     
 
 
