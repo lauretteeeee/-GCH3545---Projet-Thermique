@@ -1,3 +1,4 @@
+from solveur import PRM_DEFAUT
 import numpy as np
 
 def generer_solution_manufacturee() :
