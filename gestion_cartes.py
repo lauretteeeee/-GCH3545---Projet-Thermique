@@ -7,7 +7,7 @@ def lire_cartes(chemin)
     return 
 
 
-def ecrire_cartes(hemin, chi)
+def ecrire_cartes(chemin, chi)
     
 
 
