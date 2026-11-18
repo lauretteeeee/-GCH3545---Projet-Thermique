@@ -12,7 +12,6 @@ PRM_DEFAUT = {
     "phi_max": 0.4   # Fraction maximale de matériau conducteur
 }
 
-
 def chi_vers_proprietes(chi, prm) :
     
 
