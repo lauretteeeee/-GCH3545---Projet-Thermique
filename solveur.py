@@ -91,6 +91,5 @@ def resoudre(A, b) :
 
     return sol
 
-
 #from conditions_limites import mesurer_performance
 
