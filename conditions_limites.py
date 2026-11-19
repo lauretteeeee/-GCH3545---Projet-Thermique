@@ -1,4 +1,3 @@
-from solveur import PRM_DEFAUT
 import numpy as np
 
 
