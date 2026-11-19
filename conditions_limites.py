@@ -137,13 +137,9 @@ def mesurer_performance(sol, chi, prm) :
     T_moy= integrale_totale/(prm.Lx*prm.Ly)
 
     #Fraction de matériau conducteur
-    nb_conducteur = 0
-
-    for i in range(prm.nx):
-        for j in range(prm.ny):
-            if chi[i,j] == 1:
-                nb_conducteur += 1
-    phi= nb_conducteur/(prm.nx*prm.ny)
+    
+    #integration de chi selon y 
+    integrale_chi_y=[]
 
     return T_moy, T_max, phi
 
