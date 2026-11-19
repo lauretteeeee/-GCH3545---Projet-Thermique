@@ -52,8 +52,8 @@ def assembler_systeme(chi, cl, prm, terme_source=None) :
 
     k = chi_vers_proprietes(chi, prm)
 
-    for j in range(1, ny-1) : #parcourir les lignes mais on evite les extremites car calculer dans conditions limites
-        for i in range(1, nx-1) : #parcourir les colonnes mais on evite les extremites car calculer dans conditions limites
+    for j in range(1, ny-1) : #parcourir les lignes mais on evite les extremites car calculees dans conditions limites
+        for i in range(1, nx-1) : #parcourir les colonnes mais on evite les extremites car calculees dans conditions limites
             m = i + nx*j
             k_est = (2*k[j,i+1]*k[j,i]) / (k[j,i+1] + k[j,i])
             k_ouest = (2*k[j,i-1]*k[j,i]) / (k[j,i-1] + k[j,i])
