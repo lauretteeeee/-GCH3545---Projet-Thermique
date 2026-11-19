@@ -76,7 +76,6 @@ def assembler_systeme(chi, cl, prm, terme_source=None) :
 
     return A, b
 
-
 def resoudre(A, b) : 
     """Résout le système linéaire A u= b
     
@@ -91,4 +90,7 @@ def resoudre(A, b) :
     sol = spsolve(A_csr, b)
 
     return sol
+
+
+#from conditions_limites import mesurer_performance
 
