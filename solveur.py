@@ -69,7 +69,10 @@ def assembler_systeme(chi, cl, prm, terme_source=None) :
             if terme_source is None :
                 b[m] = prm.Q
             else :
-                b[m] = terme_source[j, i]
+                #b[m] = terme_source[j, i]
+                x = i * h
+                y = j * h
+                b[m] = terme_source(x, y)
 
     from conditions_limites import appliquer_cl
     A, b = appliquer_cl(A, b, k, cl, prm)
