@@ -14,7 +14,7 @@ def generer_solution_manufacturee(k_val) :
     dTm_dx_expr = sp.diff(Tm_expr, x)
     dTm_dy_expr = sp.diff(Tm_expr, y)
 
-    # Conversion en fonctions NumPy rapides
+    # Conversion en fonctions NumPy rapides test
     Tm = sp.lambdify((x, y), Tm_expr, "numpy")
     Qm = sp.lambdify((x, y), Qm_expr, "numpy")
     dTm_dx = sp.lambdify((x, y), dTm_dx_expr, "numpy")
