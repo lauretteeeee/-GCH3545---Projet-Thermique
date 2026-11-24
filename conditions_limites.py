@@ -173,7 +173,7 @@ def mesurer_performance(sol, chi, prm) :
         for i in range(1, nx - 1):
             somme += chi[j, i]
 
-        somme += 0.5 * chi[ny - 1, i]
+        somme += 0.5 * chi[j, nx - 1]
 
         integrale_chi_y.append(hy * somme)
 

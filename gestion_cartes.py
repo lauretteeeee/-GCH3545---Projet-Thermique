@@ -1,6 +1,6 @@
 import numpy as np
 
-def lire_cartes(chemin) :
+def lire_carte(chemin) :
 
     # ouvrir le fichier
     try:
@@ -30,19 +30,19 @@ def lire_cartes(chemin) :
             raise ValueError(f"Ligne {num} : {len(rangee)} valeurs au lieu de {nx}")
         
      # convert tableau 
-        chi = np.array(carte, dtype=int)
-        return chi
+    chi = np.array(carte, dtype=int)
+    return chi
 
     
 
 
-def ecrire_cartes(chemin, chi) :
+def ecrire_carte(chemin, chi) :
 
     np.savetxt(chemin, chi, fmt="%d", delimiter=",")
     
 
 
-def evaluer_cartes(chi) :
+def evaluer_carte(chi) :
     ny, nx = chi.shape
 
     # critere 1 : nx - 1 et ny - 1 multiples de 20
