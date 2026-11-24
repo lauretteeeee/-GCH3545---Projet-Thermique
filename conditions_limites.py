@@ -1,6 +1,6 @@
-#from solveur import PRM_DEFAUT
-
 import numpy as np
+
+
 
 def creer_cl_thermique(nx, ny, Ly=1.0):
     """Construit le dictionnaire cl par défaut pour le problème thermique."""
