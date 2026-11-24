@@ -16,29 +16,24 @@ def verifier_bilan_energie(sol, chi, prm):
         - chi : carte des matériaux, tableau de forme (ny, nx)
         - prm : paramètres (Lx, Ly, Q, k0, k1)
 
-    Sorties (dans l'ordre énuméré ci-bas):
+    Sorties:
         - q_produit : chaleur produite dans le domaine (intégrale de Q)
         - q_sortant : chaleur qui sort par le puits
         - erreur : écart relatif |q_sortant - q_produit| / q_produit
     """
 
     ny, nx = chi.shape
-    h = prm.Lx/(nx-1)                      # pas de la grille
+    h = prm.Lx/(nx-1)
 
-    # On remet la solution sous forme de tableau [j, i] (comme chi)
-    T = np.reshape(sol, (ny, nx))
-
-    # Conditions aux limites du problème thermique (on y lit où est le puits)
+    T = np.reshape(sol, (ny, nx))               # On remet la solution sous forme de tableau [j, i] (comme chi)
     cl = creer_cl_thermique(nx, ny)
-
-    # Conductivité k de chaque noeud (k0 si chi = 0, k1 si chi = 1)
     k = chi_vers_proprietes(chi, prm)
 
-    # 1) Chaleur produite : Q est uniforme, donc Q * aire du domaine
+    # 1) Chaleur produite : Q est uniforme (toujours 1), donc Q * aire du domaine
     q_produit = prm.Q*prm.Lx*prm.Ly
 
-    # 2) Chaleur évacuée : on trouve les noeuds du puits (type 'D' sur le bord
-    #    gauche), puis on additionne le flux qui sort par chacun d'eux
+    # 2) Chaleur évacuée : on trouve les noeuds du puits (type 'D' sur le bord gauche),
+    #       puis on additionne le flux qui sort par chacun d'eux
     j_puits = []
     for j in range(ny):
         if cl["gauche"]["type"][j] == "D":
@@ -48,12 +43,9 @@ def verifier_bilan_energie(sol, chi, prm):
 
     q_sortant = 0.0
     for j in range(j_debut, j_fin+1):
-        # dT/dx au bord x = 0 : différence avant d'ordre 2 (3 points T0, T1, T2)
-        dTdx = (-3*T[j, 0] + 4*T[j, 1] - T[j, 2])/(2*h)
-        # flux sortant par unité de longueur : q_n = k * dT/dx (k du noeud de bord)
-        flux = k[j, 0]*dTdx
-        # intégrale par la méthode des trapèzes : les 2 extrémités comptent pour 1/2
-        if j == j_debut or j == j_fin:
+        dTdx = (-3*T[j, 0] + 4*T[j, 1] - T[j, 2])/(2*h)     # dT/dx au bord x = 0 : différence avant d'ordre 2 (3 points T0, T1, T2)
+        flux = k[j, 0]*dTdx                                 # flux sortant par unité de longueur : q_n = k * dT/dx (k du noeud de bord)
+        if j == j_debut or j == j_fin:                      # intégrale par la méthode des trapèzes : les 2 extrémités comptent pour 1/2
             q_sortant = q_sortant + 0.5*h*flux
         else:
             q_sortant = q_sortant + h*flux
@@ -79,8 +71,8 @@ def verifier_monotonie(prm, n=41):
     cl = creer_cl_thermique(n, n)
     chi = np.zeros((n, n))                 # on part sans conducteur (chi = 0 partout)
 
-    # Positions (j0, i0) des coins de 6 blocs de conducteur, ajoutés un à un
-    positions = [(5, 10), (20, 25), (30, 8), (12, 30), (25, 12), (8, 20)]
+    
+    positions = [(5, 10), (20, 25), (30, 8), (12, 30), (25, 12), (8, 20)]       # Positions (j0, i0) des coins inférieurs gauches de blocs (taille x taille) de conducteur, ajoutés un à un
     taille = 8                             # chaque bloc fait 8 x 8 noeuds
 
     monotone = True
