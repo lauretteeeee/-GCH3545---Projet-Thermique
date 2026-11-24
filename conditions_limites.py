@@ -1,4 +1,4 @@
-from solveur import PRM_DEFAUT
+#from solveur import PRM_DEFAUT
 
 import numpy as np
 
@@ -19,15 +19,17 @@ def creer_cl_thermique(nx, ny, Ly=1.0):
 
 def appliquer_cl(A_lil, b, k, cl, prm) :
 
-    def indice(i,j,nx): #traduit les coorodonnees (i,j) en indice m de la matrice 
-      m = i +nx*j
-      return m
-    
-     #pas spatial hx et hy
+    ny,nx = k.shape
+
+    #pas spatial hx et h
     hx = prm.Lx/(nx-1)
     hy = prm.Ly/(ny-1)
 
-    ny,nx = k.shape
+
+    def indice(i,j,nx): #traduit les coorodonnees (i,j) en indice m de la matrice 
+      m = i + j*nx
+      return m
+
 
     #parcourir les 4 bords du domaine
     for bord in ["gauche", "droite", "haut", "bas"] :
@@ -135,21 +137,24 @@ def mesurer_performance(sol, chi, prm) :
 
     #température moyenne dans le domaine
 
-    hx=nx/(nx-1)
-    hy=ny/(ny-1)
+    hx=prm.Lx/(nx-1)
+    hy=prm.Ly/(ny-1)
 
     #integration selon y
     integrale_y= []
 
     for j in range (ny):
         somme= 0.5*sol_2d[j,0]
+
         for i in range(1,nx-1):
             somme+=sol_2d[j,i]
+
         somme += 0.5*sol_2d[j,nx-1]      
         integrale_y.append(hy*somme)
 
     #integration selon x 
     somme_totale= 0.5*integrale_y[0]
+
     for i in range(1,nx-1):
         somme_totale+=integrale_y[i]
     somme_totale += 0.5*integrale_y[nx-1]
