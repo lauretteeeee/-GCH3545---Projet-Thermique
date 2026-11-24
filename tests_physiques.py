@@ -2,11 +2,6 @@ from solveur import PRM_DEFAUT, chi_vers_proprietes, assembler_systeme, resoudre
 from conditions_limites import creer_cl_thermique, mesurer_performance
 import numpy as np
 
-dico_cl = creer_cl_thermique(nx =21, ny=21) # changer 21 ce sont des exemples
-
-
-
-
 
 def verifier_bilan_energie(sol, chi, prm):
     """Vérifie que toute la chaleur produite dans le domaine sort par le puits.
@@ -98,6 +93,82 @@ def verifier_monotonie(prm, n=41):
     return monotone
 
 
+def verifier_deux_couches(prm, n, orientation="x"):
+    """Compare le solveur à la solution exacte d'un problème à deux couches
+    (une couche de matériau de base, une couche de conducteur).
+
+    Montage (le problème devient 1D) :
+        - orientation "x" : couches côte à côte selon x (colonnes). T = 0 sur
+          tout le bord gauche, flux nul sur les 3 autres bords.
+        - orientation "y" : couches empilées selon y (lignes). T = 0 sur tout
+          le bord du bas, flux nul sur les 3 autres bords.
+    Solution exacte : la chaleur produite entre l'abscisse s et l'extrémité
+    isolée (s = L) doit traverser la section, donc le flux vaut Q*(L - s) et
+        T(s) = intégrale de 0 à s de Q*(L - u)/k(u) du
+
+    Entrées:
+        - prm : paramètres (Lx, Ly, Q, k0, k1)
+        - n : nombre de noeuds en x et en y (grille n x n)
+        - orientation : "x" ou "y"
+
+    Sortie:
+        - erreur relative maximale entre le solveur et la solution exacte
+    """
+
+    h = prm.Lx/(n-1)
+    L = prm.Lx
+
+    # Carte : chi = 0 (base) avant l'indice ia, chi = 1 (conducteur) à partir de ia
+    ia = n//2
+    chi = np.zeros((n, n))
+    if orientation == "x":
+        chi[:, ia:] = 1.0                  # colonnes de droite = conducteur
+    else:
+        chi[ia:, :] = 1.0                  # lignes du haut = conducteur
+
+    # Conditions aux limites : on part du cas thermique (flux nul partout et puits à gauche), puis on remplace ce qui est nécessaire
+    cl = creer_cl_thermique(n, n)
+    cl["gauche"]["type"][:] = "N"          # on enlève le petit puits
+    cl["gauche"]["valeur"][:] = 0.0
+    if orientation == "x":
+        cl["gauche"]["type"][:] = "D"      # T = 0 sur tout le bord gauche
+    else:
+        cl["bas"]["type"][:] = "D"         # T = 0 sur tout le bord du bas
+        cl["bas"]["valeur"][:] = 0.0
+
+    # Résolution avec le solveur
+    A, b = assembler_systeme(chi, cl, prm)
+    sol = resoudre(A, b)
+    T = np.reshape(sol, (n, n))
+
+    # Profil de température dans la direction des couches (ligne ou colonne du milieu)
+    if orientation == "x":
+        profil = T[n//2, :]
+    else:
+        profil = T[:, n//2]
+
+    # Position de l'interface entre les deux matériaux : à mi-chemin entre le dernier noeud de base (ia - 1) et le premier noeud de conducteur (ia)
+    a = (ia - 0.5)*h
+
+    # Solution exacte aux noeuds : F(s) = Q*(L*s - s^2/2)
+    erreur_max = 0.0
+    T_exact_max = 0.0
+    for i in range(n):
+        s = i*h
+        Fs = prm.Q*(L*s - s**2/2)
+        Fa = prm.Q*(L*a - a**2/2)
+        if s <= a:
+            T_exact = Fs/prm.k0
+        else:
+            T_exact = Fa/prm.k0 + (Fs - Fa)/prm.k1
+        if abs(profil[i] - T_exact) > erreur_max:
+            erreur_max = abs(profil[i] - T_exact)
+        if T_exact > T_exact_max:
+            T_exact_max = T_exact
+
+    return erreur_max/T_exact_max
+
+
 if __name__ == "__main__":
     # --- Bilan d'énergie sur des grilles de plus en plus fines (chi = 0 partout)
     print("=== Bilan d'énergie (chi = 0 partout) ===")
@@ -121,3 +192,16 @@ if __name__ == "__main__":
         print("Test réussi : T_moy ne remonte jamais.")
     else:
         print("ÉCHEC : T_moy a augmenté en ajoutant du conducteur.")
+
+    # --- Deux couches (vérifie la moyenne harmonique), dans les deux directions
+    print("=== Deux couches (solution exacte 1D) ===")
+    for orientation in ["x", "y"]:
+        erreur_precedente = None
+        for n in [41, 81, 161]:
+            erreur = verifier_deux_couches(PRM_DEFAUT, n, orientation)
+            if erreur_precedente is None:
+                print(f"couches selon {orientation}, n = {n:3d} : erreur relative = {erreur:.3e}")
+            else:
+                ordre = np.log(erreur_precedente/erreur)/np.log(2)
+                print(f"couches selon {orientation}, n = {n:3d} : erreur relative = {erreur:.3e} | ordre = {ordre:.2f}")
+            erreur_precedente = erreur
