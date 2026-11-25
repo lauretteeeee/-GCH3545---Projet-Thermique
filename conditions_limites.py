@@ -21,7 +21,7 @@ def appliquer_cl(A_lil, b, k, cl, prm) :
 
     ny,nx = k.shape
 
-    #pas spatial hx et h
+    #pas spatial hx et hy
     hx = prm.Lx/(nx-1)
     hy = prm.Ly/(ny-1)
 
@@ -32,6 +32,9 @@ def appliquer_cl(A_lil, b, k, cl, prm) :
 
 
     #parcourir les 4 bords du domaine
+    #Gear d'ordre 2 : la derivee est dans la direction normale au bord
+    #   bords gauche/droite -> derivee en x -> pas hx
+    #   bords haut/bas      -> derivee en y -> pas hy
     for bord in ["gauche", "droite", "haut", "bas"] :
         if bord == "gauche" :
             i = 0
@@ -42,20 +45,20 @@ def appliquer_cl(A_lil, b, k, cl, prm) :
                 valeur_cl=cl["gauche"]["valeur"][j]
 
                 if type_cl=="D":   
-                 A_lil[m,:] = 0.0
-                 A_lil[m,m] = 1.0
-                 b[m] = valeur_cl
+                    A_lil[m,:] = 0.0
+                    A_lil[m,m] = 1.0
+                    b[m] = valeur_cl
 
                 elif type_cl=="N":
-                   m1 = indice(i+1,j,nx)
-                   m2 = indice(i+2,j,nx)
+                    m1 = indice(i+1,j,nx)
+                    m2 = indice(i+2,j,nx)
 
-                   A_lil[m,:]=0.0
-                   A_lil[m,m] = 3.0
-                   A_lil[m,m1] = -4.0
-                   A_lil[m,m2] = 1.0
+                    A_lil[m,:]=0.0
+                    A_lil[m,m] = 3.0
+                    A_lil[m,m1] = -4.0
+                    A_lil[m,m2] = 1.0
 
-                   b[m]= -2*hy*valeur_cl/k[j,i]
+                    b[m]= -2*hx*valeur_cl/k[j,i]
 
         elif bord == "droite" :
             i = nx - 1
@@ -78,7 +81,8 @@ def appliquer_cl(A_lil, b, k, cl, prm) :
                     A_lil[m,m1] = -4.0
                     A_lil[m,m2] = 1.0
 
-                    b[m]= -2*hy*valeur_cl/k[j,i]
+                    b[m]= -2*hx*valeur_cl/k[j,i]
+
         elif bord == "haut" :
             j = ny - 1
             for i in range(nx) :
@@ -100,7 +104,8 @@ def appliquer_cl(A_lil, b, k, cl, prm) :
                     A_lil[m,m1] = -4.0
                     A_lil[m,m2] = 1.0
 
-                    b[m]= -2*hx*valeur_cl/k[j,i]
+                    b[m]= -2*hy*valeur_cl/k[j,i]
+
         elif bord == "bas" :
             j = 0
             for i in range(nx) :
@@ -122,7 +127,55 @@ def appliquer_cl(A_lil, b, k, cl, prm) :
                     A_lil[m,m1] = -4.0
                     A_lil[m,m2] = 1.0
 
-                    b[m]= -2*hx*valeur_cl/k[j,i]
+                    b[m]= -2*hy*valeur_cl/k[j,i]
+
+
+    # ---------------- COINS ----------------
+    # Un coin appartient a deux bords (un vertical : gauche/droite, un horizontal : bas/haut).
+    # Les boucles ci-dessus l'ont deja traite deux fois, la derniere ecriture gagnait.
+    # Regle (chargé de projet) :
+    #   - si l'un des deux bords est Dirichlet : le coin est Dirichlet (valeur imposee)
+    #   - si les deux sont Neumann : on ADDITIONNE l'equation de Gear en x et celle en y
+    # chaque coin : (i, j, bord vertical, indice sur ce bord, bord horizontal, indice sur ce bord,
+    #                sens vers l'interieur en x, sens vers l'interieur en y)
+    coins = [(0,    0,    "gauche", 0,    "bas",  0,    +1, +1),
+             (nx-1, 0,    "droite", 0,    "bas",  nx-1, -1, +1),
+             (0,    ny-1, "gauche", ny-1, "haut", 0,    +1, -1),
+             (nx-1, ny-1, "droite", ny-1, "haut", nx-1, -1, -1)]
+
+    for (i, j, bord_v, iv, bord_h, ih, sx, sy) in coins :
+        m = indice(i,j,nx)
+
+        type_v = cl[bord_v]["type"][iv]
+        valeur_v = cl[bord_v]["valeur"][iv]
+        type_h = cl[bord_h]["type"][ih]
+        valeur_h = cl[bord_h]["valeur"][ih]
+
+        A_lil[m,:] = 0.0
+
+        if type_v == "D" or type_h == "D" :
+            # Dirichlet prioritaire
+            A_lil[m,m] = 1.0
+            if type_v == "D" :
+                b[m] = valeur_v
+            else :
+                b[m] = valeur_h
+
+        else :
+            # Neumann des deux cotes : equation de Gear en x + equation de Gear en y
+            #   (3T0 - 4T1x + T2x) + (3T0 - 4T1y + T2y) = -2 hx qx/k - 2 hy qy/k
+            m1x = indice(i+sx,j,nx)
+            m2x = indice(i+2*sx,j,nx)
+            m1y = indice(i,j+sy,nx)
+            m2y = indice(i,j+2*sy,nx)
+
+            A_lil[m,m] = 6.0
+            A_lil[m,m1x] = -4.0
+            A_lil[m,m2x] = 1.0
+            A_lil[m,m1y] = -4.0
+            A_lil[m,m2y] = 1.0
+
+            b[m] = -2*hx*valeur_v/k[j,i] - 2*hy*valeur_h/k[j,i]
 
     return A_lil,b
 
@@ -173,7 +226,7 @@ def mesurer_performance(sol, chi, prm) :
         for i in range(1, nx - 1):
             somme += chi[j, i]
 
-        somme += 0.5 * chi[j, nx - 1]
+        somme += 0.5 * chi[ny - 1, i]
 
         integrale_chi_y.append(hy * somme)
 
@@ -191,5 +244,3 @@ def mesurer_performance(sol, chi, prm) :
     phi = integrale_chi / (prm.Lx * prm.Ly)
 
     return T_moy, T_max, phi
-
-
