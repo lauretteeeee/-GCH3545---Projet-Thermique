@@ -11,10 +11,11 @@ def noeuds_autorises(ny, nx) :
     puis des True (autorisation) uniquement dans le carre interieur et loin des bords.
     """
 
-    autorise = np.zeros((ny, nx), dtype = bool) #Contient que des valeurs logiques Vrai?faux
+    # Contient que des valeurs logiques Vrai/faux
+    autorise = np.zeros((ny, nx), dtype = bool) 
 
-    #Pour 3:ny-3 (en vertical) saute les lignes 0, 1, 2 en bas et les 3 dernières lignes en haut (ny-3, ny-2, ny-1).
-    #Pour 3:nx-3 (en horizontal) saute les colonnes 0, 1, 2 a gauche et les 3 dernières colonnes a droites (ny-3, ny-2, ny-1).
+    # Pour 3:ny-3 (en vertical) saute les lignes 0, 1, 2 en bas et les 3 dernières lignes en haut (ny-3, ny-2, ny-1)
+    # Pour 3:nx-3 (en horizontal) saute les colonnes 0, 1, 2 a gauche et les 3 dernières colonnes a droites (ny-3, ny-2, ny-1)
     autorise[3:ny-3, 3:nx-3] = True 
 
     return autorise
@@ -24,24 +25,24 @@ def calculer_gradient_thermique(sol_2d, prm) :
     en chaque nœud de la grille (ny, nx).
     """
      
-     # Recuperer le nombre de lignes (ny) et de colonnes (nx) de la carte de temperature
+     # Récuperer le nombre de lignes (ny) et de colonnes (nx) de la carte de température
      ny, nx = sol_2d.shape
 
      # Calcul de l'espacement entre 2 noeuds voisins
      h = prm.Lx / (nx - 1)
 
-     # Tableau 2D vide de zeros qui stockera les resultats 
+     # Tableau 2D vide de zéros qui stockera les résultats 
      grad_carre = np.zeros((ny, nx))
 
      for j in range(1, ny-1) :
           for i in range(1, nx-1) : 
-               # Derivee partielle horizontale par difference finie centree d'ordre 2
+               # Derivée partielle horizontale par différence finie centrée d'ordre 2
                dT_dx = (sol_2d[j, i+1] - sol_2d[j, i-1]) / (2*h)
 
-               # Derivee partielle verticale par difference finie centree d'ordre 2 
+               # Derivée partielle verticale par différence finie centrée d'ordre 2 
                dT_dy = (sol_2d[j+1, i] - sol_2d[j-1, i]) / (2*h)
 
-               #Carre de la norme du gradient (optimisation : on ne met pas la racine carre pour gain de temps en calculs de l'ordinateur et revient au meme car strictement croissant)
+               # Carré de la norme du gradient : on évite la racine carrée pour alléger le calcul, car la fonction racine est strictement croissante et conserve donc exactement le même classement des noeuds
                grad_carre[j, i] = dT_dx**2 + dT_dy**2
 
      return grad_carre 
