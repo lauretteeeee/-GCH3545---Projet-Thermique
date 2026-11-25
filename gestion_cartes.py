@@ -38,7 +38,7 @@ def lire_carte(chemin) :
 
 def ecrire_carte(chemin, chi) :
 
-    np.savetxt(chemin, chi, fmt="%d", delimiter=",")
+    np.savetxt(chemin, chi, fmt="%d", delimiter=",", encoding="utf-8")
     
 
 
