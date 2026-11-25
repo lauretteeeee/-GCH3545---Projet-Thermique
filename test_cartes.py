@@ -1,5 +1,5 @@
 from gestion_cartes import lire_carte, evaluer_carte
 
-chi = lire_carte(".csv")
+chi = lire_carte("carte_test_invalide.csv")
 print(chi.shape)
 print(evaluer_carte(chi))
