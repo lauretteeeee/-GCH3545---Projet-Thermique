@@ -64,5 +64,32 @@ def optimiser_glouton(chi_init, cl, prm, n_ajout=4, n_iter_echange=40) :
         - hist_Tmoy : liste de l'évolution de T_moy à chaque étape
         - hist_Tmax : liste de l'évolution de T_max à chaque étape
     """
+     # Bloc A : Préparation et première évaluation
+
+        # Copier carte de depart et generer gabarit
+     chi = chi_init.copy()
+     ny, nx = chi.shape
+     autorise = noeuds_autorises(ny, nx)
+
+        # Initialiser les listes de suivi
+     hist_Tmoy = []
+     hist_Tmax = []
+
+        # Évaluer le départ 
+     A, b = assembler_systeme(chi, cl, prm)
+     sol = resoudre(A, b)
+     sol_2d = sol.reshape((ny, nx))
+     T_moy, T_max, phi  = mesurer_performace(sol, chi, prm)
+
+        # Enregistrer les performances initiales
+     hist_Tmoy.append(T_moy)
+     hist_Tmax.append(T_max)
+
+    # Bloc B : Croissance constructive
      
+     while phi < prm.phi_max : 
+          grad_carre = calculer_gradient_thermique(sol_2d, prm)
+
+          
+          
      pass
