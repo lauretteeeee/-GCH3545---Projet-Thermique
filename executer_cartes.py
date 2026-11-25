@@ -1,5 +1,5 @@
 """Teste les cartes CSV : lecture, admissibilité, puis résolution si admissible.
-Usage :  python lancer_cartes.py carte1.csv carte2.csv ...
+Usage :  python executer_cartes.py carte1.csv carte2.csv ...
 """
 import sys
 import numpy as np
