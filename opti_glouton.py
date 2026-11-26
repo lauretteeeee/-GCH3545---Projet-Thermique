@@ -63,6 +63,7 @@ def optimiser_glouton(chi_init, cl, prm, n_ajout=4, n_iter_echange=40) :
         - chi_opt : meilleure carte binaire trouvée (ny, nx)
         - hist_Tmoy : liste de l'évolution de T_moy à chaque étape
         - hist_Tmax : liste de l'évolution de T_max à chaque étape
+        - hist_phi : liste de l'évolution de phi à chaque étape
     """
      # BLOC A : PRÉPARATION ET PREMIÈRE ÉVALUATION 
 
