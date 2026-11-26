@@ -79,7 +79,7 @@ def optimiser_glouton(chi_init, cl, prm, n_ajout=4, n_iter_echange=40) :
      A, b = assembler_systeme(chi, cl, prm)
      sol = resoudre(A, b)
      sol_2d = sol.reshape((ny, nx))
-     T_moy, T_max, phi  = mesurer_performace(sol, chi, prm)
+     T_moy, T_max, phi  = mesurer_performance(sol, chi, prm)
 
         # Enregistrer les performances initiales
      hist_Tmoy.append(T_moy)
@@ -90,6 +90,40 @@ def optimiser_glouton(chi_init, cl, prm, n_ajout=4, n_iter_echange=40) :
      while phi < prm.phi_max : 
           grad_carre = calculer_gradient_thermique(sol_2d, prm)
 
+        # 1. Lister tous les noeuds autorisés qui sont encore à 0 avec leur valeur de gradient
+          candidats = []
           
+          for j in range(ny) :
+               for i in range(nx) :
+                    if autorise[j, i] and chi == 0 :
+                         candidats.append((grad_carre[j, i], j, i))
+        
+        # S'il n'y a plus aucune case libre autorisée, arrêt de la construction
+          if len(candidats) == 0 :
+               break 
+          
+        # 2. Trier les candidats du plus grand gradient au plus petit
+          candidats.sort(reverse=True)
+
+        # 3. Sauvegarder la carte actuelle et ajouter les n_ajout meilleurs noeuds
+          chi_sauvegarde = chi.copy()
+          nb_a_ajouter = min(n_ajout, len(candidats))
+          for k in range(nb_a_ajouter) :
+               val_gradient, j_best, i_best = candidats[k]
+               chi[j_best, i_best] = 1
+        
+        # 4. Vérifier si la nouvelle carte respecte toujours phi <= 0.4
+          if not evaluer_carte(chi) :
+               chi = chi_sauvegarde
+               break
+          
+        # 5. Résoudre le nouveau système et enregistrer l'évolution
+          A, b = assembler_systeme(chi, cl, prm)
+          sol = resoudre(A, b)
+          sol_2d = sol.reshape((ny, nx))
+          T_moy, T_max, phi  = mesurer_performance(sol, chi, prm)        
+
+          hist_Tmoy.append(T_moy)
+          hist_Tmax.append(T_max)     
           
      pass
