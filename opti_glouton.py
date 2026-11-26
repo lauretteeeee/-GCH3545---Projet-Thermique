@@ -64,7 +64,7 @@ def optimiser_glouton(chi_init, cl, prm, n_ajout=4, n_iter_echange=40) :
         - hist_Tmoy : liste de l'évolution de T_moy à chaque étape
         - hist_Tmax : liste de l'évolution de T_max à chaque étape
     """
-     # Bloc A : Préparation et première évaluation
+     # BLOC A : PRÉPARATION ET PREMIÈRE ÉVALUATION 
 
         # Copier carte de depart et generer gabarit
      chi = chi_init.copy()
@@ -74,6 +74,7 @@ def optimiser_glouton(chi_init, cl, prm, n_ajout=4, n_iter_echange=40) :
         # Initialiser les listes de suivi
      hist_Tmoy = []
      hist_Tmax = []
+     hist_phi = []
 
         # Évaluer le départ 
      A, b = assembler_systeme(chi, cl, prm)
@@ -84,8 +85,9 @@ def optimiser_glouton(chi_init, cl, prm, n_ajout=4, n_iter_echange=40) :
         # Enregistrer les performances initiales
      hist_Tmoy.append(T_moy)
      hist_Tmax.append(T_max)
+     hist_phi.append(phi)
 
-    # Bloc B : Phase de croissance constructive
+     # BLOC B : PHASE 1 DE CROISSANCE CONSTRUCTIVE
      
      while phi < prm.phi_max : 
           grad_carre = calculer_gradient_thermique(sol_2d, prm)
@@ -129,6 +131,75 @@ def optimiser_glouton(chi_init, cl, prm, n_ajout=4, n_iter_echange=40) :
 
         # Enregistrer les nouvelles performances dans l'historique de convergence
           hist_Tmoy.append(T_moy)
-          hist_Tmax.append(T_max)     
+          hist_Tmax.append(T_max)
+          hist_phi.append(phi)  
+
+     # BLOC C : PHASE 2 D'AFFINAGE PAR ÉCHANGE (AVEC PHI CONSTANTE)
           
-     pass
+     # Principe : maintenant que le budget de conducteur est atteint (phi <= 0.4),
+     # on déplace les nœuds conducteurs les moins utiles (faible gradient) vers les
+     # noeuds isolants où la chaleur est encore bloquée (fort gradient)
+
+     k_ech = n_ajout # Nombre de paires de noeuds à échanger à chaque itération
+
+     for ite in range(n_iter_echange) :
+          grad_carre = calculer_gradient_thermique(sol_2d, prm)   
+
+          # 1. Lister séparément les cases conductrices (chi == 1) et isolantes (chi == 0)
+          #    uniquement dans la zone intérieure autorisée
+          conducteurs = []
+          isolants = []
+          for j in range(ny) :
+               for i in range(nx) :
+                    if autorise[j, i] :
+                         if chi[j, i] == 1 :
+                            conducteurs.append((grad_carre[j, i], j, i))
+                         else : 
+                            isolants.append((grad_carre[j, i], j, i))
+
+          # Sécurité : s'il n'y a plus assez de cases à échanger, arrêt
+          if len(conducteurs) == 0 or len(isolants) == 0 :
+               break
+          
+          # 2. Trier les conducteurs par ordre croissant (les moins utiles en premier)
+          #    et les isolants par ordre décroissant (les plus critiques en premier)
+          conducteurs.sort()
+          isolants.sort(reverse = True)
+
+          # 3. Sauvegarder la carte avant de tester l'échange
+          chi_sauvegarde = chi.copy()
+          nb_a_echanger = min(k_ech, len(conducteurs), len(isolants))
+
+          for k in range(nb_a_echanger) :
+               val_grad_cond, j_retire, i_retire = conducteurs[k]
+               val_grad_iso, j_ajoute, i_ajoute = isolants[k]
+               chi[j_retire, i_retire] = 0 # On retire le conducteur peu utile
+               chi[j_ajoute, i_ajoute] = 1 # On le place là où le gradient est fort
+        
+          # 4. Évaluer la nouvelle carte après l'échange
+          A, b = assembler_systeme(chi, cl, prm)
+          sol = resoudre(A, b)
+          nouveau_Tmoy, nouveau_Tmax, nouveau_phi = mesurer_performance(sol, chi, prm)
+
+          # 5. Critère d'acceptation : on garde l'échange uniquement s'il réduit T_moy
+          if nouveau_Tmoy < T_moy :
+               T_moy = nouveau_Tmoy
+               T_max = nouveau_Tmax
+               phi = nouveau_phi
+               sol_2d = sol.reshape((ny, nx))
+               
+               hist_Tmoy.append(T_moy)
+               hist_Tmax.append(T_max)
+               hist_phi.append(phi) 
+          
+          else : 
+               # Si l'échange dégrade ou n'améliore pas T_moy, on annule la modification
+               chi = chi_sauvegarde
+               # On réduit le nombre d'échanges simultanés pour un réglage plus précis
+               if k_ech > 1 :
+                    k_ech = k_ech // 2
+               else : 
+                    # Un échange de 1 seul noeud n'améliore plus rien : la convergence est atteinte
+                    break
+                       
+     return chi, hist_Tmoy, hist_Tmax, hist_phi
