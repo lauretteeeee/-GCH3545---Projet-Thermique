@@ -85,44 +85,49 @@ def optimiser_glouton(chi_init, cl, prm, n_ajout=4, n_iter_echange=40) :
      hist_Tmoy.append(T_moy)
      hist_Tmax.append(T_max)
 
-    # Bloc B : Croissance constructive
+    # Bloc B : Phase de croissance constructive
      
      while phi < prm.phi_max : 
           grad_carre = calculer_gradient_thermique(sol_2d, prm)
 
-        # 1. Lister tous les noeuds autorisés qui sont encore à 0 avec leur valeur de gradient
+        # 1. Repérer toutes les cases libres (chi == 0) situées dans la zone autorisée
+        #    On stocke un tuple (gradient, ligne j, colonne i) pour garder la position lors du tri
           candidats = []
           
           for j in range(ny) :
                for i in range(nx) :
-                    if autorise[j, i] and chi == 0 :
+                    if autorise[j, i] and chi[j, i] == 0 :
                          candidats.append((grad_carre[j, i], j, i))
         
-        # S'il n'y a plus aucune case libre autorisée, arrêt de la construction
+        # Sécurité : s'il n'y a plus aucune case libre autorisée, arrêt de la croissance
           if len(candidats) == 0 :
                break 
           
         # 2. Trier les candidats du plus grand gradient au plus petit
           candidats.sort(reverse=True)
 
-        # 3. Sauvegarder la carte actuelle et ajouter les n_ajout meilleurs noeuds
+        # 3. Sauvegarder la carte actuelle avant modification, puis passer les n_ajout 
+        #    meilleurs cases isolantes (0) en matériau conducteur (1)
           chi_sauvegarde = chi.copy()
           nb_a_ajouter = min(n_ajout, len(candidats))
           for k in range(nb_a_ajouter) :
                val_gradient, j_best, i_best = candidats[k]
                chi[j_best, i_best] = 1
         
-        # 4. Vérifier si la nouvelle carte respecte toujours phi <= 0.4
+        # 4. Vérifier que la nouvelle carte respecte toujours les critères (dont phi <= 0.4)
+        #    Si ce dernier ajout fait dépasser la limite, on annule et on quitte la phase de croissance
           if not evaluer_carte(chi) :
                chi = chi_sauvegarde
                break
           
-        # 5. Résoudre le nouveau système et enregistrer l'évolution
+        # 5. Recalculer le champ de température et les nouvelles performances pour cette carte
+        #    (On met à jour sol_2d et phi pour l'itération suivante du while)
           A, b = assembler_systeme(chi, cl, prm)
           sol = resoudre(A, b)
           sol_2d = sol.reshape((ny, nx))
           T_moy, T_max, phi  = mesurer_performance(sol, chi, prm)        
 
+        # Enregistrer les nouvelles performances dans l'historique de convergence
           hist_Tmoy.append(T_moy)
           hist_Tmax.append(T_max)     
           
