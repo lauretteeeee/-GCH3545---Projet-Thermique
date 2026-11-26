@@ -204,3 +204,18 @@ def optimiser_glouton(chi_init, cl, prm, n_ajout=4, n_iter_echange=40) :
                     break
                        
      return chi, hist_Tmoy, hist_Tmax, hist_phi
+
+
+# Esai en attendant les autres fonctions puis à supprimer 
+if __name__ == "__main__":
+    # Test rapide sur une grille 21x21 en partant d'une grille vide (que des 0)
+    ny, nx = 21, 21
+    chi_depart = np.zeros((ny, nx), dtype=int)
+    cl = creer_cl_thermique(nx, ny)
+
+    chi_opt, hist_Tmoy, hist_Tmax, hist_phi = optimiser_glouton(chi_depart, cl, PRM_DEFAUT, n_ajout=2, n_iter_echange=30)
+
+    print(f"T_moy initiale : {hist_Tmoy[0]:.4f}  -->  T_moy optimisée : {hist_Tmoy[-1]:.4f}")
+    print(f"T_max initiale : {hist_Tmax[0]:.4f}  -->  T_max optimisée : {hist_Tmax[-1]:.4f}")
+    print(f"Fraction finale phi : {hist_phi[-1]:.4f}")
+    print(f"Carte finale admissible (evaluer_carte) : {evaluer_carte(chi_opt)}")
