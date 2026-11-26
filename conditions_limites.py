@@ -180,44 +180,53 @@ def appliquer_cl(A_lil, b, k, cl, prm) :
     return A_lil,b
 
 
-def mesurer_performance(sol, chi, prm) :
 
-    ny,nx = chi.shape
-    sol_2d=np.reshape(sol,(ny,nx))
+def mesurer_performance(sol, chi, prm):
 
-    #température maximale dans le domaine
-    T_max = np.max(sol)
+    ny, nx = chi.shape
+    sol_2d = np.reshape(sol, (ny, nx))
 
-    #température moyenne dans le domaine
+    # Pas spatiaux
+    hx = prm.Lx / (nx - 1)
+    hy = prm.Ly / (ny - 1)
 
-    hx=prm.Lx/(nx-1)
-    hy=prm.Ly/(ny-1)
+    # Température maximale dans le domaine
+    T_max = np.max(sol_2d)
 
-    #integration selon y
-    integrale_y= []
+    # --------------------------------
+    # Température moyenne
+    # --------------------------------
 
-    for j in range (ny):
-        somme= 0.5*sol_2d[j,0]
+    # Intégration selon x, pour chaque ligne j
+    integrale_y = []
 
-        for i in range(1,nx-1):
-            somme+=sol_2d[j,i]
+    for j in range(ny):
+        somme = 0.5 * sol_2d[j, 0]
 
-        somme += 0.5*sol_2d[j,nx-1]      
-        integrale_y.append(hy*somme)
+        for i in range(1, nx - 1):
+            somme += sol_2d[j, i]
 
-    #integration selon x 
-    somme_totale= 0.5*integrale_y[0]
+        somme += 0.5 * sol_2d[j, nx - 1]
 
-    for i in range(1,nx-1):
-        somme_totale+=integrale_y[i]
-    somme_totale += 0.5*integrale_y[nx-1]
+        integrale_y.append(hx * somme)
 
-    integrale_totale= hx*somme_totale
-    T_moy= integrale_totale/(prm.Lx*prm.Ly)
+    # Intégration selon y
+    somme_totale = 0.5 * integrale_y[0]
 
-    #Fraction de matériau conducteur
-    
-    # Intégration de chi selon y
+    for j in range(1, ny - 1):
+        somme_totale += integrale_y[j]
+
+    somme_totale += 0.5 * integrale_y[ny - 1]
+
+    integrale_totale = hy * somme_totale
+
+    T_moy = integrale_totale / (prm.Lx * prm.Ly)
+
+    # --------------------------------
+    # Fraction de matériau conducteur
+    # --------------------------------
+
+    # Intégration selon x, pour chaque ligne j
     integrale_chi_y = []
 
     for j in range(ny):
@@ -226,21 +235,21 @@ def mesurer_performance(sol, chi, prm) :
         for i in range(1, nx - 1):
             somme += chi[j, i]
 
-        somme += 0.5 * chi[ny - 1, i]
+        somme += 0.5 * chi[j, nx - 1]
 
-        integrale_chi_y.append(hy * somme)
+        integrale_chi_y.append(hx * somme)
 
-    # Intégration selon x
+    # Intégration selon y
     somme_chi = 0.5 * integrale_chi_y[0]
 
-    for i in range(1, nx - 1):
-        somme_chi += integrale_chi_y[i]
+    for j in range(1, ny - 1):
+        somme_chi += integrale_chi_y[j]
 
-    somme_chi += 0.5 * integrale_chi_y[nx - 1]
+    somme_chi += 0.5 * integrale_chi_y[ny - 1]
 
-    integrale_chi = hx * somme_chi
+    integrale_chi = hy * somme_chi
 
-    # Fraction de matériau conducteur
     phi = integrale_chi / (prm.Lx * prm.Ly)
 
     return T_moy, T_max, phi
+
